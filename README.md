@@ -138,3 +138,7 @@ MIT License
 Pull requests and improvements are welcome. Feel free to fork and experiment 🚀
 
 ---
+
+## License
+
+This project is licensed under the MIT License.
