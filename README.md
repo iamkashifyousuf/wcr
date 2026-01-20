@@ -1,4 +1,4 @@
-# wcr
+# wcr 🦀
 
 **wcr** is a simple, fast Word Count utility written in Rust, inspired by the classic Unix `wc` command. It can count **lines, words, characters, and bytes** from one or more input files, or from standard input.
 
@@ -7,7 +7,7 @@
 ## Version
 
 ```
-wcr 0.1.0
+wcr 0.1.1
 ```
 
 Author: **Kashif Yousuf, <kashifyousuf.sc@gmail.com**
@@ -53,7 +53,7 @@ cargo install --path .
 ## Usage
 
 ```text
-wcr [FLAGS] [Input File]...
+wcr [FLAGS] [Input File(s)]...
 ```
 
 If no input file is provided, or if `-` is used, input is read from **stdin**.
@@ -138,5 +138,3 @@ MIT License
 Pull requests and improvements are welcome. Feel free to fork and experiment 🚀
 
 ---
-
-Happy hacking with Rust 🦀
