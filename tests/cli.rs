@@ -1,6 +1,6 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
-use rand::{Rng, distributions::Alphanumeric};
+use rand::{distributions::Alphanumeric, Rng};
 use std::fs;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
@@ -100,6 +100,12 @@ fn fox_lines() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn fox_max() -> TestResult {
+    run(&["--max-line-length", FOX], "tests/expected/fox.txt.L.out")
+}
+
+// --------------------------------------------------
+#[test]
 fn fox_words_bytes() -> TestResult {
     run(&["-w", "-c", FOX], "tests/expected/fox.txt.wc.out")
 }
@@ -112,8 +118,37 @@ fn fox_words_lines() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn fox_words_width() -> TestResult {
+    run(&["-w", "-L", FOX], "tests/expected/fox.txt.wL.out")
+}
+
+// --------------------------------------------------
+#[test]
+fn fox_words_lines_width() -> TestResult {
+    run(&["-L", "-l", FOX], "tests/expected/fox.txt.lL.out")
+}
+
+// --------------------------------------------------
+#[test]
 fn fox_bytes_lines() -> TestResult {
     run(&["-l", "-c", FOX], "tests/expected/fox.txt.cl.out")
+}
+
+// --------------------------------------------------
+#[test]
+fn fox_bytes_width() -> TestResult {
+    run(&["-L", "-c", FOX], "tests/expected/fox.txt.cL.out")
+}
+
+// --------------------------------------------------
+#[test]
+fn fox_char_width() -> TestResult {
+    run(&["-L", "-m", FOX], "tests/expected/fox.txt.mL.out")
+}
+
+#[test]
+fn fox_all_flags() -> TestResult {
+    run(&["-L", "-l", "-w", "-c", "-m", FOX], "tests/expected/fox.txt.lwcmL.out")
 }
 
 // --------------------------------------------------
@@ -142,8 +177,20 @@ fn atlamal_lines() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn atlamal_width() -> TestResult {
+    run(&["-L", ATLAMAL], "tests/expected/atlamal.txt.L.out")
+}
+
+// --------------------------------------------------
+#[test]
 fn atlamal_words_bytes() -> TestResult {
     run(&["-w", "-c", ATLAMAL], "tests/expected/atlamal.txt.wc.out")
+}
+
+// --------------------------------------------------
+#[test]
+fn atlamal_width_bytes() -> TestResult {
+    run(&["-L", "-c", ATLAMAL], "tests/expected/atlamal.txt.cL.out")
 }
 
 // --------------------------------------------------
@@ -154,15 +201,40 @@ fn atlamal_words_lines() -> TestResult {
 
 // --------------------------------------------------
 #[test]
+fn atlamal_words_width() -> TestResult {
+    run(&["-w", "-L", ATLAMAL], "tests/expected/atlamal.txt.wL.out")
+}
+
+// --------------------------------------------------
+#[test]
+fn atlamal_chars_width() -> TestResult {
+    run(&["-c", "-L", ATLAMAL], "tests/expected/atlamal.txt.cL.out")
+}
+
+// --------------------------------------------------
+#[test]
+fn atlamal_width_lines() -> TestResult {
+    run(&["-L", "-l", ATLAMAL], "tests/expected/atlamal.txt.lL.out")
+}
+
+// --------------------------------------------------
+#[test]
 fn atlamal_bytes_lines() -> TestResult {
     run(&["-l", "-c", ATLAMAL], "tests/expected/atlamal.txt.cl.out")
 }
 
 // --------------------------------------------------
 #[test]
+fn atlamal_all_flags() -> TestResult {
+    run(&["-l", "-w", "-c", "-m", "-L", ATLAMAL], "tests/expected/atlamal.txt.lwcmL.out")
+}
+
+// --------------------------------------------------
+#[test]
 fn atlamal_stdin() -> TestResult {
     let input = fs::read_to_string(ATLAMAL)?;
-    let expected = fs::read_to_string("tests/expected/atlamal.txt.stdin.out")?;
+    let expected =
+        fs::read_to_string("tests/expected/atlamal.txt.stdin.out")?;
     Command::cargo_bin(PRG)?
         .write_stdin(input)
         .assert()

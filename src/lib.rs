@@ -1,9 +1,9 @@
 use clap::{App, Arg};
 use std::error::Error;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
-
 use std::io::stdin;
+use std::io::{BufRead, BufReader};
+use unicode_width::UnicodeWidthChar;
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -14,6 +14,7 @@ pub struct Config {
     words: bool,
     bytes: bool,
     chars: bool,
+    max_line_length: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -22,6 +23,7 @@ pub struct FileInfo {
     words_counts: usize,
     bytes_counts: usize,
     chars_counts: usize,
+    max_line_length: usize,
 }
 
 pub fn get_args() -> MyResult<Config> {
@@ -64,14 +66,25 @@ pub fn get_args() -> MyResult<Config> {
                 .long("chars")
                 .takes_value(false),
         )
+        .arg(
+            Arg::with_name("max_line_length")
+                .help("print the maximum display width")
+                .short("L")
+                .long("max-line-length")
+                .takes_value(false),
+        )
         .get_matches();
 
     let mut lines = matches.is_present("lines");
     let mut words = matches.is_present("words");
     let mut bytes = matches.is_present("bytes");
     let chars = matches.is_present("chars");
+    let max_line_length = matches.is_present("max_line_length");
 
-    if [lines, words, bytes, chars].iter().all(|x| !x) {
+    if [lines, words, bytes, chars, max_line_length]
+        .iter()
+        .all(|x| !x)
+    {
         lines = true;
         words = true;
         bytes = true;
@@ -83,6 +96,7 @@ pub fn get_args() -> MyResult<Config> {
         words,
         bytes,
         chars,
+        max_line_length,
     })
 }
 
@@ -91,6 +105,7 @@ pub fn run(config: Config) -> MyResult<()> {
     let mut total_words: usize = 0;
     let mut total_bytes: usize = 0;
     let mut total_chars: usize = 0;
+    let mut total_max_line_length: usize = 0;
 
     for file in &config.files {
         match open(file) {
@@ -101,13 +116,15 @@ pub fn run(config: Config) -> MyResult<()> {
                 total_words += file_info.words_counts;
                 total_bytes += file_info.bytes_counts;
                 total_chars += file_info.chars_counts;
+                total_max_line_length += file_info.max_line_length;
 
                 println!(
-                    "{}{}{}{}{}",
+                    "{}{}{}{}{}{}",
                     format_field(config.lines, file_info.lines_counts),
                     format_field(config.words, file_info.words_counts),
                     format_field(config.bytes, file_info.bytes_counts),
                     format_field(config.chars, file_info.chars_counts),
+                    format_field(config.max_line_length, file_info.max_line_length),
                     if file == "-" {
                         "".to_string()
                     } else {
@@ -120,11 +137,12 @@ pub fn run(config: Config) -> MyResult<()> {
 
     if config.files.len() != 1 {
         println!(
-            "{}{}{}{} total",
+            "{}{}{}{}{} total",
             format_field(config.lines, total_lines),
             format_field(config.words, total_words),
             format_field(config.bytes, total_bytes),
-            format_field(config.chars, total_chars)
+            format_field(config.chars, total_chars),
+            format_field(config.max_line_length, total_max_line_length),
         )
     }
 
@@ -139,28 +157,33 @@ fn open(file: &str) -> MyResult<Box<dyn BufRead>> {
 }
 
 fn count(mut reader: impl BufRead) -> MyResult<FileInfo> {
-    let mut lines_counts = 0;
-    let mut words_counts = 0;
-    let mut bytes_counts = 0;
-    let mut chars_counts = 0;
     let mut string_buff = String::new();
+    let mut lines = 0;
+    let mut words = 0;
+    let mut bytes = 0;
+    let mut chars = 0;
+    let mut max_line_len = 0;
+
     loop {
         let bytes_read = reader.read_line(&mut string_buff)?;
         if bytes_read == 0 {
             break;
         }
-        lines_counts += 1;
-        words_counts += string_buff.split_ascii_whitespace().count();
-        bytes_counts += bytes_read;
-        chars_counts += string_buff.chars().count();
+        lines += 1;
+        words += string_buff.split_ascii_whitespace().count();
+        bytes += bytes_read;
+        chars += string_buff.chars().count();
+        max_line_len = max_line_len.max(compute_line_len(&string_buff));
+
         string_buff.clear();
     }
 
     Ok(FileInfo {
-        lines_counts,
-        words_counts,
-        bytes_counts,
-        chars_counts,
+        lines_counts: lines,
+        words_counts: words,
+        bytes_counts: bytes,
+        chars_counts: chars,
+        max_line_length: max_line_len,
     })
 }
 
@@ -172,9 +195,29 @@ fn format_field(cond: bool, value: usize) -> String {
     }
 }
 
+fn compute_line_len(line: &str) -> usize {
+    let tab_width: usize = 8;
+    let mut current_max_line_len = 0;
+    for ch in line.chars() {
+        match ch {
+            '\t' => {
+                let next_tab = tab_width - (current_max_line_len % tab_width);
+                current_max_line_len += next_tab;
+            }
+            '\n' | '\r' => {
+                break;
+            }
+            _ => {
+                current_max_line_len += ch.width().unwrap_or(0);
+            }
+        }
+    }
+    current_max_line_len
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::format_field;
+    use crate::{compute_line_len, format_field};
 
     use super::{FileInfo, count};
     use std::io::Cursor;
@@ -190,6 +233,7 @@ mod tests {
             words_counts: 10,
             bytes_counts: 48,
             chars_counts: 48,
+            max_line_length: 46,
         };
         assert_eq!(info.unwrap(), expected);
 
@@ -202,6 +246,7 @@ mod tests {
             words_counts: 0,
             bytes_counts: 0,
             chars_counts: 0,
+            max_line_length: 0,
         };
         assert_eq!(info.unwrap(), expected);
     }
@@ -221,5 +266,17 @@ mod tests {
         let res = format_field(false, 33);
         let expected = format!("");
         assert_eq!(res, expected);
+    }
+
+    #[test]
+    fn test_compute_line_len() {
+        let line = "I don't want the world, I just want your half.\r\n";
+        assert_eq!(compute_line_len(line), 46);
+
+        let line = "Two.";
+        assert_eq!(compute_line_len(line), 4);
+
+        let line = "";
+        assert_eq!(compute_line_len(line), 0);
     }
 }
