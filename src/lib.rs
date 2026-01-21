@@ -30,7 +30,7 @@ pub fn get_args() -> MyResult<Config> {
     let matches = App::new("wcr")
         .about("Word Count in Rust")
         .author("Kashif Yousuf, <kashifyousuf.sc@gmail.com")
-        .version("0.1.0")
+        .version("0.2.0")
         .arg(
             Arg::with_name("files")
                 .help("Input Files")
