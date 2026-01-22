@@ -30,13 +30,25 @@ pub fn get_args() -> MyResult<Config> {
     let matches = App::new("wcr")
         .about("Word Count in Rust")
         .author("Kashif Yousuf, <kashifyousuf.sc@gmail.com")
-        .version("0.2.0")
+        .version("0.3.0")
         .arg(
             Arg::with_name("files")
                 .help("Input Files")
                 .value_name("FILE")
                 .default_value("-")
-                .multiple(true),
+                .multiple(true)
+                // .conflicts_with("from_file"),
+                // .required(false)
+        )
+        .arg(
+            Arg::with_name("from_files")
+                .help("read input from the files specified by NUL-terminated names in file F; If F is - then read names from standard input")
+                .long("files0-from")
+                .takes_value(true)
+                .conflicts_with("files")
+                .value_name("File with Null seperator")
+                // .multiple(false)
+                // .default_value("-")
         )
         .arg(
             Arg::with_name("lines")
@@ -90,8 +102,26 @@ pub fn get_args() -> MyResult<Config> {
         bytes = true;
     }
 
+    let files = if matches.is_present("from_files") {
+        let file_list = matches.value_of_lossy("from_files").unwrap();
+        let handle = open(&file_list).map_err(|e| format!("{}: {}", file_list, e))?;
+        let files = read_null_separated(handle)?;
+        files
+    } else {
+        matches.values_of_lossy("files").unwrap()
+    };
+
+    /// Below code block is only for debugging purpose
+    // {
+    //     let from_files = matches
+    //         .values_of_lossy("from_files")
+    //         .unwrap_or(vec!["-".to_string(); 1]);
+    //     println!("files -> {:?}", matches.values_of_lossy("files").unwrap());
+    //     println!("fromfiles -> {:?}", from_files);
+    //     println!("Proceeding with -> {:?}", files);
+    // }
     Ok(Config {
-        files: matches.values_of_lossy("files").unwrap(),
+        files,
         lines,
         words,
         bytes,
@@ -156,6 +186,22 @@ fn open(file: &str) -> MyResult<Box<dyn BufRead>> {
     }
 }
 
+fn read_null_separated(mut handle: impl BufRead) -> MyResult<Vec<String>> {
+    let mut files = vec![];
+
+    loop {
+        let mut bytes_buff = Vec::new();
+        let bytes_read = handle.read_until(b'\0', &mut bytes_buff)?;
+        if bytes_read == 0 {
+            break;
+        }
+        bytes_buff.pop();
+        files.push(String::from_utf8(bytes_buff)?);
+    }
+
+    Ok(files)
+}
+
 fn count(mut reader: impl BufRead) -> MyResult<FileInfo> {
     let mut string_buff = String::new();
     let mut lines = 0;
@@ -174,7 +220,6 @@ fn count(mut reader: impl BufRead) -> MyResult<FileInfo> {
         bytes += bytes_read;
         chars += string_buff.chars().count();
         max_line_len = max_line_len.max(compute_line_len(&string_buff));
-
         string_buff.clear();
     }
 
