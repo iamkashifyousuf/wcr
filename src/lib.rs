@@ -37,8 +37,6 @@ pub fn get_args() -> MyResult<Config> {
                 .value_name("FILE")
                 .default_value("-")
                 .multiple(true)
-                // .conflicts_with("from_file"),
-                // .required(false)
         )
         .arg(
             Arg::with_name("from_files")
@@ -47,8 +45,7 @@ pub fn get_args() -> MyResult<Config> {
                 .takes_value(true)
                 .conflicts_with("files")
                 .value_name("File with Null seperator")
-                // .multiple(false)
-                // .default_value("-")
+                .multiple(false)
         )
         .arg(
             Arg::with_name("lines")
@@ -111,15 +108,6 @@ pub fn get_args() -> MyResult<Config> {
         matches.values_of_lossy("files").unwrap()
     };
 
-    /// Below code block is only for debugging purpose
-    // {
-    //     let from_files = matches
-    //         .values_of_lossy("from_files")
-    //         .unwrap_or(vec!["-".to_string(); 1]);
-    //     println!("files -> {:?}", matches.values_of_lossy("files").unwrap());
-    //     println!("fromfiles -> {:?}", from_files);
-    //     println!("Proceeding with -> {:?}", files);
-    // }
     Ok(Config {
         files,
         lines,
@@ -195,7 +183,9 @@ fn read_null_separated(mut handle: impl BufRead) -> MyResult<Vec<String>> {
         if bytes_read == 0 {
             break;
         }
-        bytes_buff.pop();
+        if bytes_buff.last() == Some(&0) {
+            bytes_buff.pop();
+        }
         files.push(String::from_utf8(bytes_buff)?);
     }
 

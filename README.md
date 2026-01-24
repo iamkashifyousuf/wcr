@@ -7,7 +7,7 @@
 ## Version
 
 ```
-wcr 0.1.1
+wcr 0.2.0
 ```
 
 Author: **Kashif Yousuf, <kashifyousuf.sc@gmail.com**
@@ -68,6 +68,7 @@ If no input file is provided, or if `-` is used, input is read from **stdin**.
 | `-m` | `--chars`   | Print character count    |
 | `-l` | `--lines`   | Print newline count      |
 | `-w` | `--words`   | Print word count         |
+| `-L` | `--max-line-length`   | Print the maximum display width         |
 | `-h` | `--help`    | Show help information    |
 | `-V` | `--version` | Show version information |
 
@@ -78,6 +79,14 @@ If no input file is provided, or if `-` is used, input is read from **stdin**.
 | Argument          | Description                                      |
 | ----------------- | ------------------------------------------------ |
 | `<Input File>...` | One or more input files (default: `-` for stdin) |
+
+---
+
+## Options
+
+| Options          | Description                                      |
+| ----------------- | ------------------------------------------------ |
+| `--files0-from <File with Null seperator>` | Read input from the files specified by NUL-terminated names in file F; If F is - then read names from standard input |
 
 ---
 

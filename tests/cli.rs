@@ -1,6 +1,6 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{Rng, distributions::Alphanumeric};
 use std::fs;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;
@@ -148,7 +148,10 @@ fn fox_char_width() -> TestResult {
 
 #[test]
 fn fox_all_flags() -> TestResult {
-    run(&["-L", "-l", "-w", "-c", "-m", FOX], "tests/expected/fox.txt.lwcmL.out")
+    run(
+        &["-L", "-l", "-w", "-c", "-m", FOX],
+        "tests/expected/fox.txt.lwcmL.out",
+    )
 }
 
 // --------------------------------------------------
@@ -226,15 +229,17 @@ fn atlamal_bytes_lines() -> TestResult {
 // --------------------------------------------------
 #[test]
 fn atlamal_all_flags() -> TestResult {
-    run(&["-l", "-w", "-c", "-m", "-L", ATLAMAL], "tests/expected/atlamal.txt.lwcmL.out")
+    run(
+        &["-l", "-w", "-c", "-m", "-L", ATLAMAL],
+        "tests/expected/atlamal.txt.lwcmL.out",
+    )
 }
 
 // --------------------------------------------------
 #[test]
 fn atlamal_stdin() -> TestResult {
     let input = fs::read_to_string(ATLAMAL)?;
-    let expected =
-        fs::read_to_string("tests/expected/atlamal.txt.stdin.out")?;
+    let expected = fs::read_to_string("tests/expected/atlamal.txt.stdin.out")?;
     Command::cargo_bin(PRG)?
         .write_stdin(input)
         .assert()
